@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>HiAbby — Compliment Generator</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#6ee7b7; --muted:#9aa7b2;
+      --glass: rgba(255,255,255,0.04);
+      --round: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:
+        radial-gradient(800px 400px at 10% 10%, rgba(110,231,183,0.06), transparent 8%),
+        radial-gradient(600px 300px at 90% 90%, rgba(99,102,241,0.04), transparent 8%),
+        var(--bg);
+      color:#e6eef3;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+    }
+
+    .card{
+      width:min(760px,96%);
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--round);
+      padding:26px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+      border:1px solid rgba(255,255,255,0.03);
+      backdrop-filter: blur(6px) saturate(120%);
+    }
+
+    header{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      margin-bottom:14px;
+    }
+    .logo{
+      width:56px;height:56px;border-radius:12px;
+      display:grid;place-items:center;font-weight:700;
+      background:linear-gradient(135deg,var(--accent), #60a5fa);
+      color:#062024;font-size:18px;
+      box-shadow:0 6px 18px rgba(110,231,183,0.08);
+    }
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:0;font-size:13px}
+
+    .controls{
+      display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap;
+    }
+    input[type="text"]{
+      background:var(--glass); border:1px solid rgba(255,255,255,0.03);
+      color:inherit;padding:10px 12px;border-radius:10px;font-size:15px;
+      outline:none;min-width:160px;
+    }
+    select{
+      background:var(--glass); color:inherit; padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
+    }
+    button{
+      background:linear-gradient(90deg,var(--accent), #60a5fa);
+      border:0;padding:10px 14px;border-radius:10px;color:#012018;
+      font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.45);
+    }
+    button.ghost{
+      background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);
+    }
+
+    .display{
+      margin-top:22px;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.012), transparent);
+      border:1px solid rgba(255,255,255,0.02);min-height:90px;display:flex;flex-direction:column;gap:8px;justify-content:center;
+      position:relative;
+    }
+    .bubble{
+      max-width:100%; font-size:18px; line-height:1.3; padding:10px 14px;border-radius:10px;
+      background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    .meta{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:8px;margin-top:10px}
+    .small{font-size:13px;padding:8px 10px;border-radius:9px}
+
+    /* confetti dots */
+    .dot{
+      position:absolute;opacity:0;transform:translateY(0) scale(0.6);
+      width:10px;height:10px;border-radius:3px;
+    }
+    @keyframes pop {
+      0%{opacity:0; transform: translateY(0) scale(0.6) rotate(0)}
+      20%{opacity:1; transform: translateY(-10px) scale(1.05) rotate(20deg)}
+      100%{opacity:0; transform: translateY(-60px) scale(0.8) rotate(120deg)}
+    }
+
+    footer{margin-top:16px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center}
+    a.link{color:var(--muted);text-decoration:underline;cursor:pointer}
+    @media (max-width:520px){
+      .controls{flex-direction:column;align-items:stretch}
+      input[type="text"]{width:100%}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="card" role="main" aria-labelledby="title">
+    <header>
+      <div class="logo">Hi</div>
+      <div>
+        <h1 id="title">HiAbby — Compliment Generator</h1>
+        <p class="lead">Quick, light, surface-level compliments. Click Generate to get a short compliment you can say in person.</p>
+      </div>
+    </header>
+
+    <div class="controls" aria-hidden="false">
+      <input id="nameInput" type="text" value="Abby" aria-label="Name" />
+      <select id="mood">
+        <option value="light">Light & Casual</option>
+        <option value="playful">Playful / Cheeky</option>
+        <option value="friendly">Friendly</option>
+      </select>
+
+      <button id="generateBtn">Generate</button>
+      <button id="againBtn" class="ghost small">Another</button>
+      <button id="copyBtn" class="ghost small">Copy</button>
+    </div>
+
+    <div class="display" id="display" aria-live="polite">
+      <div class="bubble" id="bubble">Press <strong>Generate</strong> to get a compliment.</div>
+      <div class="meta" id="meta">Made for a quick smile • Surface-level compliments</div>
+
+      <!-- confetti dots -->
+      <div class="dot" id="d1" style="left:10%;background:#ff6b6b"></div>
+      <div class="dot" id="d2" style="left:22%;background:#ffd166"></div>
+      <div class="dot" id="d3" style="left:38%;background:#6ee7b7"></div>
+      <div class="dot" id="d4" style="left:58%;background:#60a5fa"></div>
+      <div class="dot" id="d5" style="left:72%;background:#c084fc"></div>
+      <div class="dot" id="d6" style="left:86%;background:#fda4af"></div>
+    </div>
+
+    <footer>
+      <div>Tip: change the name if you want to use it for someone else</div>
+      <div><a class="link" id="resetLink">Reset</a></div>
+    </footer>
+  </div>
+
+  <script>
+    (function(){
+      const compliments = {
+        light: [
+          "your hair looks great today.",
+          "you have a nice smile.",
+          "that color really suits you.",
+          "your laugh is cute.",
+          "you look good in every picture.",
+          "you make casual clothes look stylish.",
+          "your voice is pleasant.",
+          "you always pick fun outfits.",
+          "your energy makes the day better.",
+          "you have really nice eyes."
+        ],
+        playful: [
+          "you owe me a song for making my day better.",
+          "stop being so effortlessly cool.",
+          "excuse me, where did you get that charm?",
+          "you make running errands look like an event.",
+          "you should be on a 'best-dressed' list.",
+          "lowkey jealous of your vibe today.",
+          "you make the small things fun.",
+          "your outfit just got a thumbs-up from me.",
+          "someone call a photographer — you’re glowing.",
+          "you’re peak good-mood energy."
+        ],
+        friendly: [
+          "you’re honestly great to hang out with.",
+          "you always know how to make people laugh.",
+          "you’re an easy person to talk to.",
+          "you picked the perfect place for today.",
+          "you give off really good vibes.",
+          "you have a knack for making people comfortable.",
+          "you’re one of the most thoughtful people I know.",
+          "you’re fun to be around, simple as that.",
+          "thanks for being so reliable.",
+          "you’ve got a chill, pleasant energy."
+        ]
+      };
+
+      const nameInput = document.getElementById('nameInput');
+      const mood = document.getElementById('mood');
+      const generateBtn = document.getElementById('generateBtn');
+      const againBtn = document.getElementById('againBtn');
+      const copyBtn = document.getElementById('copyBtn');
+      const bubble = document.getElementById('bubble');
+      const meta = document.getElementById('meta');
+      const dots = Array.from(document.querySelectorAll('.dot'));
+      const resetLink = document.getElementById('resetLink');
+
+      function pickCompliment(cat){
+        const list = compliments[cat] || compliments.light;
+        return list[Math.floor(Math.random()*list.length)];
+      }
+
+      function showCompliment(text){
+        bubble.innerHTML = text;
+        meta.textContent = 'Compliment ready • Click Copy or Another';
+      }
+
+      function animateConfetti(){
+        dots.forEach((d, i) => {
+          d.style.opacity = 1;
+          d.style.transform = 'translateY(0) scale(0.8)';
+          d.style.animation = `pop 900ms cubic-bezier(.2,.9,.2,1) ${i*40}ms forwards`;
+        });
+        // clear animations after
+        setTimeout(()=>dots.forEach(d=>{ d.style.opacity=0; d.style.animation=''; }), 1400);
+      }
+
+      function format(name, compliment){
+        // capitalizes name and combines
+        const cleanName = (name||'Abby').trim();
+        const cname = cleanName ? cleanName[0].toUpperCase()+cleanName.slice(1) : 'Abby';
+        // if compliment already ends with punctuation, leave it
+        const punct = /[.?!]$/.test(compliment) ? '' : '.';
+        return `<strong>${cname}</strong>, ${compliment}${punct}`;
+      }
+
+      generateBtn.addEventListener('click', ()=>{
+        const cat = mood.value;
+        const raw = pickCompliment(cat);
+        const out = format(nameInput.value, raw);
+        showCompliment(out);
+        animateConfetti();
+      });
+
+      againBtn.addEventListener('click', ()=>{
+        const cat = mood.value;
+        const raw = pickCompliment(cat);
+        const out = format(nameInput.value, raw);
+        showCompliment(out);
+      });
+
+      copyBtn.addEventListener('click', async ()=>{
+        const text = bubble.textContent || bubble.innerText;
+        try{
+          await navigator.clipboard.writeText(text);
+          meta.textContent = 'Copied to clipboard ✓';
+        }catch(e){
+          meta.textContent = 'Could not copy — select & ctrl+c';
+        }
+      });
+
+      resetLink.addEventListener('click', ()=>{
+        nameInput.value = 'Abby';
+        mood.value = 'light';
+        bubble.innerHTML = 'Press <strong>Generate</strong> to get a compliment.';
+        meta.textContent = 'Made for a quick smile • Surface-level compliments';
+      });
+
+      // allow Enter to generate
+      nameInput.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter') generateBtn.click();
+      });
+
+      // small accessibility: focus styles
+      [nameInput, mood, generateBtn, againBtn, copyBtn].forEach(el=>{
+        el.addEventListener('focus', ()=>el.style.outline='2px solid rgba(110,231,183,0.18)');
+        el.addEventListener('blur', ()=>el.style.outline='');
+      });
+
+    })();
+  </script>
+</body>
+</html>
